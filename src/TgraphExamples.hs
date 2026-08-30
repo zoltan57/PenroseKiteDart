@@ -124,7 +124,7 @@ chunks n
       ch [] = []
       ch as = take n as : ch (drop n as)
 
-{- chunking generalises chunks to allow specifying different lengths.
+{- |chunking generalises chunks to allow specifying different lengths.
 
    chunking ns as - will split the list as into a list of lists, where the lengths of inner lists
    are determined by the Ints in ns (in order). The last Int in ns will be used as a default length for all subsequent inner lists.
@@ -139,7 +139,7 @@ chunking [n] ds = chunks n ds -- repeat last Int n
 chunking [] _ = error "chunking: empty Int list found "
 
 -- |makes a list of lists of diagrams into a single diagram treating them as a column of rows,
--- using default separator of 1.0 for rows and columns.
+-- using default separator of 1.0 for rows and columns (see also centerRows').
 centerRows :: OKBackend b =>
               [[Diagram b]] -> Diagram b
 centerRows = centerRows' 1.0
@@ -151,7 +151,7 @@ centerRows' :: OKBackend b =>
 centerRows' s = centerY . vsep s . map (centerX . hsep s)
 
 -- |arrangeRows n diags - arranges diags into a single diagram with n>0 per row, centering each row horizontally.
--- The default separation is 1.0 vertically and horizontally.
+-- The default separation is 1.0 vertically and horizontally (see also arrangeRows').
 -- An error is raised if n<1
 arrangeRows :: OKBackend b =>
                Int -> [Diagram b] -> Diagram b

@@ -102,9 +102,11 @@ module Tgraph.Force
   , wholeTileUpdates
   , incompleteHalves
   , aceKiteUpdates
+  , aceMissingKite
   , nonKDarts
   , queenOrKingUpdates
   , kitesWingDartOrigin
+  , queenOrKingMissingKite
   , deuceDartUpdates
   , deuceMissingDart
   , kiteGaps
@@ -1015,8 +1017,8 @@ type UFinder = BoundaryState -> [Dedge] -> [(Dedge,TileFace)]
 -- when creating the update.]
 -- As an example, addKiteShortE will try to produce an update to add a half-kite with short edge against the boundary.
 -- Such a function can be used with a UFinder that either returns dart halves with short edge on the boundary
--- (nonKDarts in rule 2) or returns kite halves with short edge on the boundary
--- (kitesWingDartOrigin in rule 3).
+-- (aceMissingKite in rule 2) or returns kite halves with short edge on the boundary
+-- (queenOrKingMissingKite in rule 3).
 type UChecker = BoundaryState -> TileFace -> Try Update
 
 {-|This is a general purpose filter (previously used to create UFinder functions for each force rule).
@@ -1027,7 +1029,7 @@ type UChecker = BoundaryState -> TileFace -> Try Update
  (when given a BoundaryState and list of focus edges).
  For some predicates the BoundaryState argument is not used (eg boundaryJoin in incompleteHalves), 
  but for others it is used to look at other faces at b or at a besides the supplied face 
- (eg in kitesWingDartOrigin) 
+ (eg in queenOrKingMissingKite) 
 -}
 boundaryFilter::  (BoundaryState -> Dedge -> TileFace -> Bool) -> UFinder
 boundaryFilter predF bd focus =
@@ -1047,7 +1049,7 @@ boundaryFilter predF bd focus =
  (when given a BoundaryState and list of focus edges).
  For some predicates the BoundaryState argument is not used (eg boundaryJoin in incompleteHalves), 
  but for others it is used to look at other faces besides the supplied face 
- (eg in kitesWingDartOrigin) 
+ (eg in queenOrKingMissingKite) 
 -}
 boundaryEdgeFilter::  EdgeType -> (BoundaryState -> TileFace -> Bool) -> UFinder
 boundaryEdgeFilter etype predF bd focus =
@@ -1095,12 +1097,14 @@ isDartOrigin:: BoundaryState -> Vertex -> Bool
 isDartOrigin bd v = v `elem` map originV (filter isDart (facesAtBV bd v))
 
 -- |A boundary vertex with >2 kite wings is a queen vertex 
--- (needing a fourth kite on a kite short edge or dart on a kite long edge)
+-- (needing a fourth kite on a kite short edge or dart on a kite long edge).
 mustbeQueen:: BoundaryState -> Vertex -> Bool
 mustbeQueen bd v = kiteWingCount bd v > 2
 
-queenKite :: BoundaryState -> TileFace -> Bool
-queenKite bd fc = isKite fc && mustbeQueen bd (wingV fc)
+-- |(not exported) A kite half with its wing on the boundary known to be a queen vertex (>2 kite wings).
+-- This allows for 2 cases where the short or long of the kite is on the boundary.
+queenKiteWing :: BoundaryState -> TileFace -> Bool
+queenKiteWing bd fc = isKite fc && mustbeQueen bd (wingV fc)
         
 -- |kiteWingCount bd v - the number of kite wings at v in BoundaryState bd
 kiteWingCount:: BoundaryState -> Vertex -> Int
@@ -1109,6 +1113,8 @@ kiteWingCount bd v = length $ filter ((==v) . wingV) $ filter isKite (facesAtBV 
 -- |kiteOppCount bd v - the number of kite opps at v in BoundaryState bd
 kiteOppCount:: BoundaryState -> Vertex -> Int
 kiteOppCount bd v = length $ filter ((==v) . oppV) $ filter isKite (facesAtBV bd v)
+
+-- (mustbeJack replaced internally by oneDartJack or twoDartJack but still exported) 
 
 -- |mustbeJack  is true of a boundary vertex if
 -- it is the wing of two darts not sharing an origin or
@@ -1122,6 +1128,21 @@ mustbeJack bd v =
         isKiteOrigin = v `elem` map originV (filter isKite fcs)
         matching (x:y:_) = x == y
         matching _ = False
+
+-- |(not exported) True of a boundary vertex if it is a kite origin and a dart wing (therefore a jack)
+oneDartJack :: BoundaryState -> Vertex -> Bool
+oneDartJack bd v = isKiteOrigin && isDartWing 
+   where fcs = facesAtBV bd v
+         isKiteOrigin = v `elem` map originV (filter isKite fcs)
+         isDartWing = v `elem` map wingV (filter isDart fcs)
+
+-- |(not exported) True of a boundary vertex if it is more than 1 (hence 2) dart wings.
+-- WARNING should only be used when a dart long is on the boundary.
+-- (This ensures the two darts are not sharing a long edge).
+twoDartJack :: BoundaryState -> Vertex -> Bool
+twoDartJack bd v = length dWingFaces > 1
+   where fcs = facesAtBV bd v
+         dWingFaces = filter ((==v) . wingV) $ filter isDart fcs
 
 {-| newUpdateGenerator combines an update case finder (UFinder) with its corresponding update checker (UChecker)
     to produce an update generator.
@@ -1150,25 +1171,38 @@ incompleteHalves :: UFinder
 incompleteHalves = boundaryEdgeFilter Join anyFace where
     anyFace _ _ = True
 
+
 -- |Update generator for rule (2)
 aceKiteUpdates :: UpdateGenerator
-aceKiteUpdates = newUpdateGenerator addKiteShortE nonKDarts
+aceKiteUpdates = newUpdateGenerator addKiteShortE aceMissingKite
 
 -- |Find half darts with boundary short edge
-nonKDarts :: UFinder
-nonKDarts = boundaryEdgeFilter Short foundDart where
+aceMissingKite :: UFinder
+aceMissingKite = boundaryEdgeFilter Short foundDart where
     foundDart _ = isDart
+
+{-# DEPRECATED nonKDarts "Renamed as aceMissingKite" #-}
+-- |Find half darts with boundary short edge
+nonKDarts :: UFinder
+nonKDarts = aceMissingKite
 
 
 -- |Update generator for rule (3)
  -- queen and king vertices add a missing kite half (on a boundary kite short edge)
 queenOrKingUpdates :: UpdateGenerator
-queenOrKingUpdates = newUpdateGenerator addKiteShortE kitesWingDartOrigin
+queenOrKingUpdates = newUpdateGenerator addKiteShortE queenOrKingMissingKite
 
 -- |Find kites with boundary short edge where the wing is also a dart origin
-kitesWingDartOrigin :: UFinder
-kitesWingDartOrigin = boundaryEdgeFilter Short kiteWDO where
+-- (Hence the wing is a queen or king vertex)
+queenOrKingMissingKite :: UFinder
+queenOrKingMissingKite = boundaryEdgeFilter Short kiteWDO where
    kiteWDO bd fc = isKite fc && isDartOrigin bd (wingV fc)
+
+{-# DEPRECATED kitesWingDartOrigin "Renamed as queenOrKingMissingKite" #-}
+-- |Find kites with boundary short edge where the wing is also a dart origin
+-- (Hence the wing is a queen or king vertex)
+kitesWingDartOrigin :: UFinder
+kitesWingDartOrigin = queenOrKingMissingKite
 
 
 {-| Update generator for rule (4)
@@ -1193,16 +1227,16 @@ deuceMissingDart = boundaryEdgeFilter Short deuceKite where
 kiteGaps :: UFinder
 kiteGaps = deuceMissingDart
 
+
 -- |Update generator for rule (5)
 -- jackDartUpdates - jack vertex add a missing second dart
 jackDartUpdates :: UpdateGenerator
 jackDartUpdates = newUpdateGenerator addDartShortE jackMissingDart
 
--- |Find kite halves with a short edge on the boundary where oppV must be a jack vertex
--- The function mustbeJack finds if a vertex must be a jack.
+-- |Find a kite half with a short edge on the boundary where oppV must be a jack vertex
 jackMissingDart :: UFinder
 jackMissingDart = boundaryEdgeFilter Short farKOfDarts where
-   farKOfDarts bd fc  = isKite fc && mustbeJack bd (oppV fc)
+   farKOfDarts bd fc  = isKite fc && oneDartJack bd (oppV fc)
 
 {-# DEPRECATED noTouchingDart "Renamed as jackMissingDart" #-}
 -- |Find kite halves with a short edge on the boundary where oppV must be a jack vertex
@@ -1233,16 +1267,14 @@ almostSunStar = boundaryEdgeFilter Long multiples57 where
 
 
 -- |Update generator for rule (7)
--- jack vertices with dart long edge on the boundary - add missing kite top.
--- The function mustbeJack finds if a vertex must be a jack.
+-- jack vertices with dart long edge on the boundary - add missing kite.
 jackKiteUpdates :: UpdateGenerator
 jackKiteUpdates = newUpdateGenerator addKiteLongE jackMissingKite
 
--- |Find a boundary long edge of a dart where the wingV is a jack vertex.
--- The function mustbeJack finds if a vertex must be a jack.
+-- |Find a boundary long edge of a dart where the wingV has two dart wings (hence a jack vertex).
 jackMissingKite :: UFinder
 jackMissingKite = boundaryEdgeFilter Long dartsWingDB where
-    dartsWingDB bd fc = isDart fc && mustbeJack bd (wingV fc)
+    dartsWingDB bd fc = isDart fc && twoDartJack bd (wingV fc)
 
 -- |Update generator for rule (8)
 -- king vertices with 2 of the 3 darts  - add another half dart on a boundary long edge of existing darts
@@ -1256,6 +1288,7 @@ kingMissingThirdDart :: UFinder
 kingMissingThirdDart = boundaryEdgeFilter Long predicate where
     predicate bd fc = isDart fc && mustbeKing bd (originV fc)
 
+
 -- |Update generator for rule (9)
 -- queen vertices (more than 2 kite wings) with a boundary kite long edge - add a half dart
 queenDartUpdates :: UpdateGenerator
@@ -1264,13 +1297,14 @@ queenDartUpdates = newUpdateGenerator addDartLongE queenMissingDart
 -- |Find a boundary kite long edge where the wingV must be a queen vertex
 -- (more than 2 kite wings at the wingV).
 queenMissingDart :: UFinder
-queenMissingDart = boundaryEdgeFilter Long queenKite
+queenMissingDart = boundaryEdgeFilter Long queenKiteWing
 
 {-# DEPRECATED queenMissingDarts "Renamed as queenMissingDart" #-}
 -- |Find a boundary kite long edge where the wingV must be a queen vertex
 -- (more than 2 kite wings at the wingV).
 queenMissingDarts :: UFinder
-queenMissingDarts = boundaryEdgeFilter Long queenKite
+queenMissingDarts = boundaryEdgeFilter Long queenKiteWing
+
 
 -- |Update generator for rule (10)
 -- queen vertices with more than 2 kite wings -- add missing half kite on a boundary kite short edge
@@ -1280,7 +1314,7 @@ queenKiteUpdates = newUpdateGenerator addKiteShortE queenMissingKite
 -- |Find a kite short edge on the boundary where the wingV must be a queen vertex
 -- (more than 2 kite wings at the wingV).
 queenMissingKite :: UFinder
-queenMissingKite = boundaryEdgeFilter Short queenKite
+queenMissingKite = boundaryEdgeFilter Short queenKiteWing
  
 --  Six Update Checkers
 
@@ -1409,7 +1443,7 @@ defaultAllUGen = UpdateGenerator { applyUG = gen } where
       dartLongDecider f
         | mustbeStar bd (originV f) = mapItem (completeSunStar bd f)
         | mustbeKing bd (originV f) = mapItem (addDartLongE bd f)
-        | mustbeJack bd (wingV f) = mapItem (addKiteLongE bd f)
+        | twoDartJack bd (wingV f) = mapItem (addKiteLongE bd f) -- musbeJack
         | otherwise = Right mempty
 
       kiteLongDecider f
@@ -1418,7 +1452,7 @@ defaultAllUGen = UpdateGenerator { applyUG = gen } where
         | otherwise = Right mempty
 
       kiteShortDecider f
-        | mustbeDeuce bd (oppV f) || mustbeJack bd (oppV f) = mapItem (addDartShortE bd f)
+        | mustbeDeuce bd (oppV f) || oneDartJack bd (oppV f) = mapItem (addDartShortE bd f)
         | mustbeQueen bd (wingV f) || isDartOrigin bd (wingV f) = mapItem (addKiteShortE bd f)
         | otherwise = Right mempty
  --     mapItem :: Try Update -> Try Updates
