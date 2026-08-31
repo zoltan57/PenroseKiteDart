@@ -1136,9 +1136,9 @@ oneDartJack bd v = isKiteOrigin && isDartWing
          isKiteOrigin = v `elem` map originV (filter isKite fcs)
          isDartWing = v `elem` map wingV (filter isDart fcs)
 
--- |(not exported) True of a boundary vertex if it is more than 1 (hence 2) dart wings.
+-- |(not exported) True of a boundary vertex if it has more than 1 (hence 2) dart wings.
 -- WARNING should only be used when a dart long is on the boundary.
--- (This ensures the two darts are not sharing a long edge).
+-- (This ensures the two darts are not sharing a long edge, so must be a jack).
 twoDartJack :: BoundaryState -> Vertex -> Bool
 twoDartJack bd v = length dWingFaces > 1
    where fcs = facesAtBV bd v

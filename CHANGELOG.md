@@ -3,6 +3,7 @@
 ## Since v1.10
 
 -  Added:
+     deformVP (in Tgraph.Prelude) and testVPDeform (in TgraphExamples)
      kiteOppCount, deuceMissingDart, jackMissingDart, queenMissingDart, aceMissingKite, queenOrKingMissingKite,
      chunking, centerRows, centerRows', arrangeRows'
   
