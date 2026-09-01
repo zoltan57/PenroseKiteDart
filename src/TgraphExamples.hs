@@ -99,7 +99,7 @@ module TgraphExamples
  , testRhombus
       -- * Examples showing VPatch transform and deform
  , testVPTransform
- , testVPDeform
+ , deformExample
 
   ) where
 
@@ -548,10 +548,10 @@ testVPTransform =
   hsep 1 [labelled drawj (shearY 1.2 vp), shearY 1.2 (labelled drawj vp)]
            where vp = makeVP foolD
 
--- |Shows a non linear (squeeze) deformation of a VPatch.
--- The left figure is a twice decomposed kingGraph and the right figure shows this after the deformation.
-testVPDeform :: OKBackend b => Diagram b
-testVPDeform = padBorder $ lw thin $ hsep 1 [drawing vp1, drawing vp2]
+-- |Shows a non linear (squeeze) deformation applied to a VPatch.
+-- The left figure shows a twice decomposed kingGraph and the right figure is drawn after the deformation.
+deformExample :: OKBackend b => Diagram b
+deformExample = padBorder $ lw thin $ hsep 1 [drawing vp1, drawing vp2]
   where drawing = colourDKG (darkcyan, indigo, peachpuff)
         vp1 = rotatedVP (90@@deg) (force (decompositions kingGraph !!2))
         vp2 :: VPatch = deform squeeze vp1
