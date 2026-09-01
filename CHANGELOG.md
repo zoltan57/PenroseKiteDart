@@ -2,8 +2,10 @@
 
 ## Since v1.10
 
+-  Made VPatch deformable
+
 -  Added:
-     deformVP (in Tgraph.Prelude) and testVPDeform (in TgraphExamples)
+     deformExample (in TgraphExamples)
      kiteOppCount, deuceMissingDart, jackMissingDart, queenMissingDart, aceMissingKite, queenOrKingMissingKite,
      chunking, centerRows, centerRows', arrangeRows'
   
@@ -14,9 +16,6 @@
     queenMissingDarts (Renamed as queenMissingDart)
     kitesWingDartOrigin  (Renamed as queenOrKingMissingKite)
     arrangeRowsGap (Renamed as arrangeRows')
-
--  Removed:
-     isKiteOppV
   
 ## version 1.10
 

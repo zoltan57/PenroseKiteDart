@@ -548,13 +548,13 @@ testVPTransform =
   hsep 1 [labelled drawj (shearY 1.2 vp), shearY 1.2 (labelled drawj vp)]
            where vp = makeVP foolD
 
--- |Shows a non linear (squeeze) deformation using deformVP.
+-- |Shows a non linear (squeeze) deformation of a VPatch.
 -- The left figure is a twice decomposed kingGraph and the right figure shows this after the deformation.
 testVPDeform :: OKBackend b => Diagram b
 testVPDeform = padBorder $ lw thin $ hsep 1 [drawing vp1, drawing vp2]
   where drawing = colourDKG (darkcyan, indigo, peachpuff)
         vp1 = rotatedVP (90@@deg) (force (decompositions kingGraph !!2))
-        vp2 = deformVP squeeze vp1
+        vp2 :: VPatch = deform squeeze vp1
         squeeze = Deformation $ \p ->
                    ((p ^. _x) * (1 - (p ^. _y)/30)) ^& (p ^. _y)
 

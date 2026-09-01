@@ -153,7 +153,6 @@ module Tgraph.Prelude
   , removeFacesFromVP
   , removeVerticesFromVP
   , selectVerticesFromVP
-  , deformVP
   , findLoc
   , centerOn
   , alignXaxis
@@ -1098,9 +1097,18 @@ type instance V VPatch = V2
 type instance N VPatch = Double
 
 
--- |Make VPatch Transformable.
+-- |A VPatch can be transformed.
 instance Transformable VPatch where
+    transform :: Transformation V2 Double -> VPatch -> VPatch
     transform t vp = vp {vLocs = VMap.map (transform t) (vLocs vp)}
+
+-- | A VPatch can be deformed
+instance Deformable VPatch VPatch where
+   deform :: Deformation V2 V2 Double -> VPatch -> VPatch
+   deform d vp = vp{vLocs = VMap.map (deform d) (vLocs vp)}
+
+   deform' :: Double -> Deformation V2 V2 Double -> VPatch -> VPatch
+   deform' r d vp = vp{vLocs = VMap.map (deform' r d) (vLocs vp)}
 
 
 -- |VPatch is in class HasFace
@@ -1169,10 +1177,6 @@ removeVerticesFromVP vs vp = removeFacesFromVP (filter (hasVIn vs) (faces vp)) v
 -- at least one vertex in the list vs from vp.
 selectVerticesFromVP :: [Vertex] -> VPatch -> VPatch
 selectVerticesFromVP vs vp = restrictTo (filter (hasVIn vs) (faces vp)) vp
-
--- |Applies a deformation to a VPatch
-deformVP :: Deformation V2 V2 Double -> VPatch -> VPatch
-deformVP d vp = vp{vLocs = VMap.map (deform d) (vLocs vp)}
 
 -- |find the location of a single vertex in a VPatch
 findLoc :: Vertex -> VPatch -> Maybe (Point V2 Double)

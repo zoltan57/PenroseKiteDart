@@ -296,7 +296,7 @@ instance Drawable Patch where
   drawWith = drawPatchWith where
     -- turn a patch into a diagram using the first argument for drawing pieces.
     -- drawPatchWith:: (Piece -> Diagram B) -> Patch -> Diagram B      
-      drawPatchWith pd = position . fmap (viewLoc . mapLoc pd)
+      drawPatchWith pd = position . map (viewLoc . mapLoc pd)
 
 -- | the main default case for drawing using drawPiece.
 draw :: (Drawable a, OKBackend b) =>

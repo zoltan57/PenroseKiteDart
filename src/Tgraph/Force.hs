@@ -137,7 +137,7 @@ module Tgraph.Force
   , mustbeDeuce
   , mustbeKing
   , isKiteWing
---  , isKiteOppV -- no longer used
+  , isKiteOppV -- no longer used
   , isDartOrigin
   , mustbeQueen
   , kiteWingCount
@@ -1088,10 +1088,11 @@ mustbeKing bd v = isKiteWing bd v && length dartOrigins ==4
 isKiteWing:: BoundaryState -> Vertex -> Bool
 isKiteWing bd v = v `elem` map wingV (filter isKite (facesAtBV bd v))
 
-{- -- |isKiteOppV bd v - Vertex v is a kite oppV in BoundaryState bd
+-- (No longer used)
+-- |isKiteOppV bd v - Vertex v is a kite oppV in BoundaryState bd
 isKiteOppV:: BoundaryState -> Vertex -> Bool
 isKiteOppV bd v = v `elem` map oppV (filter isKite (facesAtBV bd v))
- -}
+
 -- |isDartOrigin bd v - Vertex v is a dart origin in BoundaryState bd
 isDartOrigin:: BoundaryState -> Vertex -> Bool
 isDartOrigin bd v = v `elem` map originV (filter isDart (facesAtBV bd v))
