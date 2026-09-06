@@ -532,29 +532,39 @@ extendChoicesFig = padBorder $ lw thin $ vsep 2 [hsep 3 (take 3 figs), hsep 3 (d
 -- The top part (filled) is a 5 times decomposed sunGraph converted to rhombuses (P3) when drawn.
 -- The bottom part is the 5 times decomposed sunGraph reflected about its x-axis.
 testRhombus :: OKBackend b => Diagram b
-testRhombus = padBorder $
-              fillWN darkmagenta indigo g # lw veryThin # lc gold 
+testRhombus = padBorder $ lw veryThin $
+              fillWN darkmagenta indigo g # lc gold 
               ===
-              draw g # reflectY # lw veryThin
+              draw g # reflectY
       where g = decompositions sunGraph !! 5
 
--- | Performs a shearY transform before and after drawing foolD (decomposed fool) with labels.
--- In the left diagram labels are added after the transform, and on the right they are added before the transform.
--- Since PKD version 1.10, linear transforms that do not preserve angles will work as expected on
--- VPatch, Patch, P3_Patch.
-testVPTransform :: OKBackend b => Diagram b
+-- |Performs a shearY transform before and after drawing a forced queenGraph with labels.
+-- The left figure shows an untransformed forced queenGraph.
+-- The middle figure shows the result of drawing with labels after the VPatch is transformed.
+-- The right figure shows the result of transforming the final diagram after drawing with labels.
+-- (Since PenroseKiteDart version 1.10, 2D linear transforms will commute with unlabelled drawing
+-- from a VPatch, Patch, or P3_Patch.
+-- Prior to 1.10 this was only true if the transformation preserved angles.)
+testVPTransform  :: OKBackend b => Diagram b
 testVPTransform = 
   padBorder $ lw thin $ 
-  hsep 1 [labelled drawj (shearY 1.2 vp), shearY 1.2 (labelled drawj vp)]
-           where vp = makeVP foolD
+  hcat [drawing vp, drawing (shearY 1.05 vp), shearY 1.05 (drawing vp)]
+           where vp = rotatedVP (90@@deg) g
+                 g = force queenGraph
+                 drawing = labelled (colourDKG(silver, powderblue, indigo))
 
--- |Shows a non linear (squeeze) deformation applied to a VPatch.
--- The left figure shows a twice decomposed kingGraph and the right figure is drawn after the deformation.
+-- |Illustrating a non linear (squeeze) deformation being applied to a VPatch.
+-- The left figure shows a forced, twice decomposed kingGraph,
+-- the middle and right figures are drawn after the deformation,
+-- showing both dart/kite (P2 style) and rhombus (P3 style) drawing.
+-- Since PenroseKiteDart version 1.10.1 a VPatch is deformable.
 deformExample :: OKBackend b => Diagram b
-deformExample = padBorder $ lw thin $ hsep 1 [drawing vp1, drawing vp2]
+deformExample = padBorder $ lw thin $ hsep 1 [drawing vp1, drawing vp2, drawingR vp2]
   where drawing = colourDKG (darkcyan, indigo, peachpuff)
-        vp1 = rotatedVP (90@@deg) (force (decompositions kingGraph !!2))
-        vp2 :: VPatch = deform squeeze vp1
+        drawingR = lc peachpuff . fillNW darkcyan indigo
+        g = force $ decompositions kingGraph !!2
+        vp1 = rotatedVP (90@@deg) g
+        vp2 = deformVP squeeze vp1
         squeeze = Deformation $ \p ->
                    ((p ^. _x) * (1 - (p ^. _y)/30)) ^& (p ^. _y)
 

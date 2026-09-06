@@ -1,11 +1,13 @@
 # Revision history for PenroseKiteDart
 
-## Since v1.10
+## version 1.10.1
 
--  Made VPatch deformable
+-  VPatch is now deformable
 
 -  Added:
-     deformExample (in TgraphExamples)
+     deformVP (in Tgraph.Prelude), deformExample (in TgraphExamples)
+
+-  Also Added:
      kiteOppCount, deuceMissingDart, jackMissingDart, queenMissingDart, aceMissingKite, queenOrKingMissingKite,
      chunking, centerRows, centerRows', arrangeRows'
   

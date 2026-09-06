@@ -157,6 +157,7 @@ module Tgraph.Prelude
   , centerOn
   , alignXaxis
   , alignments
+  , deformVP
     -- * Drawing with Labels
   , DrawableLabelled(..)
   , labelSize
@@ -1110,6 +1111,10 @@ instance Deformable VPatch VPatch where
    deform' :: Double -> Deformation V2 V2 Double -> VPatch -> VPatch
    deform' r d vp = vp{vLocs = VMap.map (deform' r d) (vLocs vp)}
 
+-- | Explicitly typed instance of deform for a VPatch
+-- (This can avoid the need for type annotations when using deform)
+deformVP :: Deformation V2 V2 Double -> VPatch -> VPatch
+deformVP = deform
 
 -- |VPatch is in class HasFace
 instance HasFaces VPatch where
